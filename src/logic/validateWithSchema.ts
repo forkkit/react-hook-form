@@ -1,41 +1,90 @@
+import appendErrors from './appendErrors';
+import isArray from '../utils/isArray';
+import transformToNestObject from './transformToNestObject';
 import {
   FieldValues,
-  SchemaValidationResult,
   SchemaValidateOptions,
-  Schema,
   FieldErrors,
+  ValidationResolver,
 } from '../types';
 
-// TODO: Fix these types
+type SchemaValidationResult<FormValues> = {
+  errors: FieldErrors<FormValues>;
+  values: FieldValues;
+};
+
+type YupValidationError = {
+  inner: { path: string; message: string; type: string }[];
+  path: string;
+  message: string;
+  type: string;
+};
+
+type Schema<Data> = {
+  validate(value: FieldValues, options?: SchemaValidateOptions): Promise<Data>;
+};
+
 export const parseErrorSchema = <FormValues>(
-  error: FieldValues,
+  error: YupValidationError,
+  validateAllFieldCriteria: boolean,
 ): FieldErrors<FormValues> =>
-  error.inner.length
+  isArray(error.inner)
     ? error.inner.reduce(
         (previous: FieldValues, { path, message, type }: FieldValues) => ({
           ...previous,
-          [path]: { message, ref: {}, type },
+          ...(previous[path] && validateAllFieldCriteria
+            ? {
+                [path]: appendErrors(
+                  path,
+                  validateAllFieldCriteria,
+                  previous,
+                  type,
+                  message,
+                ),
+              }
+            : {
+                [path]: previous[path] || {
+                  message,
+                  type,
+                  ...(validateAllFieldCriteria
+                    ? {
+                        types: { [type]: message || true },
+                      }
+                    : {}),
+                },
+              }),
         }),
         {},
       )
     : {
-        [error.path]: { message: error.message, ref: {}, type: error.type },
+        [error.path]: { message: error.message, type: error.type },
       };
 
-export default async function validateWithSchema<FormValues>(
+export default async function validateWithSchema<FormValues, ValidationContext>(
   validationSchema: Schema<FormValues>,
-  validationSchemaOption: SchemaValidateOptions,
-  data: FieldValues,
+  validateAllFieldCriteria: boolean,
+  data: FormValues,
+  validationResolver?: ValidationResolver<FormValues, ValidationContext>,
+  context?: ValidationContext,
 ): Promise<SchemaValidationResult<FormValues>> {
+  if (validationResolver) {
+    return validationResolver(data, context);
+  }
+
   try {
     return {
-      result: await validationSchema.validate(data, validationSchemaOption),
-      fieldErrors: {},
+      values: await validationSchema.validate(data, {
+        abortEarly: false,
+        context,
+      }),
+      errors: {},
     };
   } catch (e) {
     return {
-      result: {},
-      fieldErrors: parseErrorSchema<FormValues>(e),
+      values: {},
+      errors: transformToNestObject(
+        parseErrorSchema<FormValues>(e, validateAllFieldCriteria),
+      ),
     };
   }
 }

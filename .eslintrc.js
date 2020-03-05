@@ -18,11 +18,12 @@ module.exports = {
     '@typescript-eslint/no-object-literal-type-assertion': 'off',
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'error',
+    'no-console': 'error',
   },
   settings: {
     react: {
       pragma: 'React',
-      version: '16.9',
+      version: 'detect',
     },
   },
 };

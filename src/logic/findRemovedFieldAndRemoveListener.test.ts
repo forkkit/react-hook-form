@@ -1,3 +1,4 @@
+// @ts-nocheck
 import findRemovedFieldAndRemoveListener from './findRemovedFieldAndRemoveListener';
 import isDetached from '../utils/isDetached';
 
@@ -19,7 +20,7 @@ describe('findMissDomAndClean', () => {
       test: 'test',
     };
     expect(
-      findRemovedFieldAndRemoveListener(fields as any, () => {}, {
+      findRemovedFieldAndRemoveListener(fields as any, () => ({} as any), {
         ref: { name: 'bill', type: 'radio' },
       }),
     ).toEqual(undefined);
@@ -47,7 +48,7 @@ describe('findMissDomAndClean', () => {
         ],
       },
     };
-    findRemovedFieldAndRemoveListener(fields, () => {}, {
+    findRemovedFieldAndRemoveListener(fields, () => ({} as any), {
       ref: { name: 'test', type: 'radio' },
       options: [
         {
@@ -82,7 +83,7 @@ describe('findMissDomAndClean', () => {
       },
     };
 
-    findRemovedFieldAndRemoveListener(fields, () => {}, {
+    findRemovedFieldAndRemoveListener(fields, () => ({} as any), {
       ref,
       mutationWatcher: {
         disconnect,
@@ -90,15 +91,6 @@ describe('findMissDomAndClean', () => {
     });
 
     expect(fields).toMatchSnapshot();
-  });
-
-  it('should return undefined when empty ref', () => {
-    const fields = {
-      test: 'test',
-    };
-    expect(
-      findRemovedFieldAndRemoveListener(fields as any, () => {}, {} as any),
-    ).toEqual(undefined);
   });
 
   it('should work for radio type input', () => {
@@ -124,8 +116,41 @@ describe('findMissDomAndClean', () => {
     };
 
     expect(
-      findRemovedFieldAndRemoveListener(fields, () => {}, {
+      findRemovedFieldAndRemoveListener(fields, () => ({} as any), {
         ref: { name: 'test', type: 'radio' },
+        options: [{ ref }],
+        mutationWatcher: {
+          disconnect,
+        },
+      }),
+    ).toMatchSnapshot();
+  });
+
+  it('should work for checkbox type input', () => {
+    const ref = document.createElement('input');
+    ref.setAttribute('name', 'test');
+    ref.setAttribute('type', 'checkbox');
+    document.body.contains = jest.fn(() => false);
+    const disconnect = jest.fn();
+    const fields = {
+      test: {
+        name: 'test',
+        ref: {},
+        mutationWatcher: {
+          disconnect,
+        },
+      },
+      test1: {
+        name: 'test',
+        ref: {
+          type: 'checkbox',
+        },
+      },
+    };
+
+    expect(
+      findRemovedFieldAndRemoveListener(fields, () => ({} as any), {
+        ref: { name: 'test', type: 'checkbox' },
         options: [{ ref }],
         mutationWatcher: {
           disconnect,
@@ -157,7 +182,7 @@ describe('findMissDomAndClean', () => {
       },
     };
 
-    findRemovedFieldAndRemoveListener(fields, () => {}, {
+    findRemovedFieldAndRemoveListener(fields, () => ({} as any), {
       ref: { name: 'test', type: 'text' },
       options: [
         {
@@ -172,7 +197,7 @@ describe('findMissDomAndClean', () => {
     expect(fields).toMatchSnapshot();
 
     expect(
-      findRemovedFieldAndRemoveListener(fields, () => {}, {
+      findRemovedFieldAndRemoveListener(fields, () => ({} as any), {
         ref: { name: 'test', type: 'text' },
       }),
     ).toMatchSnapshot();
@@ -180,7 +205,12 @@ describe('findMissDomAndClean', () => {
 
   it('should return undefined when field is not found', () => {
     expect(
-      findRemovedFieldAndRemoveListener({}, undefined, undefined as any, false),
+      findRemovedFieldAndRemoveListener(
+        {},
+        () => ({} as any),
+        undefined as any,
+        false,
+      ),
     ).toBeUndefined();
   });
 
@@ -205,7 +235,7 @@ describe('findMissDomAndClean', () => {
     };
     findRemovedFieldAndRemoveListener(
       fields,
-      () => {},
+      () => ({} as any),
       {
         ref: { name: 'test', type: 'radio' },
         options: [

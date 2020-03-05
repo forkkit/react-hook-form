@@ -1,9 +1,23 @@
-import { FieldError } from '../types';
 import isObject from './isObject';
+import { FieldError, MultipleFieldErrors, ValidateResult } from '../types';
+import compareObject from './compareObject';
 
 export default (
   error: FieldError | undefined,
-  type: string,
-  message: string | undefined,
-): boolean =>
-  isObject(error) && (error.type === type && error.message === message);
+  {
+    type,
+    types,
+    message,
+  }: {
+    type: string;
+    types?: MultipleFieldErrors;
+    message: ValidateResult;
+  },
+): boolean => {
+  return (
+    isObject(error) &&
+    error.type === type &&
+    error.message === message &&
+    compareObject(error.types, types)
+  );
+};

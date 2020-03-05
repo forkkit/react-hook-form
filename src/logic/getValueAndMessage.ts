@@ -1,21 +1,26 @@
 import isObject from '../utils/isObject';
 import isRegex from '../utils/isRegex';
-import { ValidationTypes } from '../types';
+import { ValidationValue } from '../types';
+
+type ValidationValueMessage = {
+  value: ValidationValue;
+  message: string;
+};
 
 export default (
-  validationData?:
-    | ValidationTypes
-    | { value: ValidationTypes; message: string },
+  validationData?: ValidationValue | ValidationValueMessage,
 ): {
-  value: ValidationTypes;
+  value: ValidationValue;
   message: string;
-} => ({
-  value:
-    isObject(validationData) && !isRegex(validationData)
-      ? validationData.value
-      : (validationData as ValidationTypes),
-  message:
-    isObject(validationData) && !isRegex(validationData)
-      ? validationData.message
+} => {
+  const isPureObject = isObject(validationData) && !isRegex(validationData);
+
+  return {
+    value: isPureObject
+      ? (validationData as ValidationValueMessage).value
+      : (validationData as ValidationValue),
+    message: isPureObject
+      ? (validationData as ValidationValueMessage).message
       : '',
-});
+  };
+};

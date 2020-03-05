@@ -3,9 +3,13 @@ context('basic form validation', () => {
     cy.visit('http://localhost:3000/basic/onSubmit');
     cy.get('button#submit').click();
 
-    cy.focused().should('have.attr', 'name', 'firstName');
+    cy.focused().should('have.attr', 'name', 'nestItem.nest1');
 
     cy.get('input[name="firstName"] + p').contains('firstName error');
+    cy.get('input[name="nestItem.nest1"] + p').contains('nest 1 error');
+    cy.get('input[name="arrayItem[0].test1"] + p').contains(
+      'array item 1 error',
+    );
     cy.get('input[name="lastName"] + p').contains('lastName error');
     cy.get('select[name="selectNumber"] + p').contains('selectNumber error');
     cy.get('select[name="multiple"] + p').contains('multiple error');
@@ -13,9 +17,14 @@ context('basic form validation', () => {
       'minRequiredLength error',
     );
     cy.get('input[name="radio"] + p').contains('radio error');
+    cy.get('input[name="checkbox"] + p').contains('checkbox error');
+    cy.get('input[name="checkboxArray"] + p').contains('checkboxArray error');
     cy.get('input[name="validate"] + p').contains('validate error');
 
     cy.get('input[name="firstName"]').type('bill');
+    cy.get('input[name="firstName"]').type('a');
+    cy.get('input[name="arrayItem[0].test1"]').type('ab');
+    cy.get('input[name="nestItem.nest1"]').type('ab');
     cy.get('input[name="lastName"]').type('luo123456');
     cy.get('input[name="lastName"] + p').contains('lastName error');
     cy.get('select[name="selectNumber"]').select('1');
@@ -51,6 +60,7 @@ context('basic form validation', () => {
     cy.get('input[name="minDate"]').type('2019-08-01');
     cy.get('input[name="maxDate"]').type('2019-08-01');
     cy.get('input[name="checkbox"]').check();
+    cy.get('input[name="checkboxArray"]').check('3');
 
     cy.get('p').should('have.length', 0);
 
@@ -67,11 +77,23 @@ context('basic form validation', () => {
     cy.get('input[name="pattern"]').should('not.have.value');
     cy.get('input[name="minDate"]').should('not.have.value');
     cy.get('input[name="maxDate"]').should('not.have.value');
-    cy.get('#renderCount').contains('34');
+    cy.get('#renderCount').contains('33');
   });
 
   it('should validate the form with onBlur mode and reset the form', () => {
     cy.visit('http://localhost:3000/basic/onBlur');
+
+    cy.get('input[name="nestItem.nest1"]').focus();
+    cy.get('input[name="nestItem.nest1"]').blur();
+    cy.get('input[name="nestItem.nest1"] + p').contains('nest 1 error');
+    cy.get('input[name="nestItem.nest1"]').type('a');
+
+    cy.get('input[name="arrayItem[0].test1"]').focus();
+    cy.get('input[name="arrayItem[0].test1"]').blur();
+    cy.get('input[name="arrayItem[0].test1"] + p').contains(
+      'array item 1 error',
+    );
+    cy.get('input[name="arrayItem[0].test1"]').type('a');
 
     cy.get('input[name="firstName"]').focus();
     cy.get('input[name="firstName"]').blur();
@@ -107,6 +129,13 @@ context('basic form validation', () => {
     cy.get('input[name="minLength"]').type('bi');
     cy.get('input[name="minRequiredLength"]').type('bi');
     cy.get('select[name="multiple"]').select(['optionA']);
+    cy.get('input[name="radio"]')
+      .first()
+      .focus();
+    cy.get('input[name="radio"]')
+      .first()
+      .blur();
+    cy.get('input[name="radio"] + p').contains('radio error');
     cy.get('input[name="radio"]').check('1');
     cy.get('input[name="min"]')
       .clear()
@@ -116,6 +145,9 @@ context('basic form validation', () => {
       .type('19');
     cy.get('input[name="minDate"]').type('2019-08-01');
     cy.get('input[name="maxDate"]').type('2019-08-01');
+    cy.get('input[name="checkbox"]').focus();
+    cy.get('input[name="checkbox"]').blur();
+    cy.get('input[name="checkbox"] + p').contains('checkbox error');
     cy.get('input[name="checkbox"]').check();
 
     cy.get('p').should('have.length', 0);
@@ -133,10 +165,10 @@ context('basic form validation', () => {
     cy.get('input[name="pattern"]').should('not.have.value');
     cy.get('input[name="minDate"]').should('not.have.value');
     cy.get('input[name="maxDate"]').should('not.have.value');
-    cy.get('#renderCount').contains('40');
+    cy.get('#renderCount').contains('32');
   });
 
-  it.only('should validate the form with onChange mode and reset the form', () => {
+  it('should validate the form with onChange mode and reset the form', () => {
     cy.visit('http://localhost:3000/basic/onChange');
 
     cy.get('input[name="firstName"]').type('bill');

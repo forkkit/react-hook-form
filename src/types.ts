@@ -1,152 +1,333 @@
 import * as React from 'react';
 
-export type BaseFieldValue = any;
+export type Primitive = string | boolean | number | symbol | null | undefined;
 
-export type FieldValues = Record<string, BaseFieldValue>;
-
-export type RawFieldName<FormValues extends FieldValues> = Extract<
-  keyof FormValues,
-  string
->;
+export type FieldValues = Record<string, any>;
 
 export type FieldName<FormValues extends FieldValues> =
-  | RawFieldName<FormValues>
+  | (keyof FormValues & string)
   | string;
 
 export type FieldValue<FormValues extends FieldValues> = FormValues[FieldName<
   FormValues
 >];
 
-export type Inputs = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+export type Ref = FieldElement;
 
-export type Ref = Inputs | any;
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends Array<infer U>
+    ? Array<DeepPartial<U>>
+    : T[P] extends ReadonlyArray<infer U>
+    ? ReadonlyArray<DeepPartial<U>>
+    : DeepPartial<T[P]>;
+};
 
-type Mode = keyof ValidationMode;
-type TouchedMode = keyof Pick<ValidationMode, 'onChange' | 'onBlur'>;
-
-export type OnSubmit<FormValues extends FieldValues> = (
-  data: FormValues,
-  e: React.BaseSyntheticEvent,
-) => void | Promise<void>;
-
-export interface ValidationMode {
+export type ValidationMode = {
   onBlur: 'onBlur';
   onChange: 'onChange';
   onSubmit: 'onSubmit';
-}
+};
+
+export type Mode = keyof ValidationMode;
+
+export type OnSubmit<FormValues extends FieldValues> = (
+  data: FormValues,
+  event?: React.BaseSyntheticEvent,
+) => void | Promise<void>;
 
 export type SchemaValidateOptions = Partial<{
   strict: boolean;
   abortEarly: boolean;
   stripUnknown: boolean;
   recursive: boolean;
-  context: object;
+  context: any;
 }>;
 
-export interface Schema<Data> {
-  validate(value: FieldValues, options?: SchemaValidateOptions): Promise<Data>;
-}
+export type ValidationResolver<FormValues, ValidationContext> = (
+  values: FormValues,
+  validationContext?: ValidationContext,
+) => { values: FormValues | {}; errors: FieldErrors<FormValues> | {} };
 
-export type Options<FormValues extends FieldValues = FieldValues> = Partial<{
+export type UseFormOptions<
+  FormValues extends FieldValues = FieldValues,
+  ValidationContext = any
+> = Partial<{
   mode: Mode;
   reValidateMode: Mode;
-  touchedMode: TouchedMode;
-  defaultValues: Partial<FormValues>;
-  validationSchemaOption: SchemaValidateOptions;
-  validationFields: FieldName<FormValues>[];
+  defaultValues: DeepPartial<FormValues>;
   validationSchema: any;
-  nativeValidation: boolean;
+  validationResolver: ValidationResolver<FormValues, ValidationContext>;
+  validationContext: ValidationContext;
   submitFocusError: boolean;
+  validateCriteriaMode: 'firstError' | 'all';
 }>;
 
-export interface MutationWatcher {
+export type MutationWatcher = {
   disconnect: VoidFunction;
   observe?: any;
-}
+};
 
 type ValidationOptionObject<Value> = Value | { value: Value; message: string };
 
-export type ValidationTypes = number | string | RegExp;
+export type ValidationValue = boolean | number | string | RegExp;
 
-export type ValidateResult =
-  | string
-  | boolean
-  | void
-  | Promise<string>
-  | Promise<boolean>;
+export type ValidateResult = string | boolean | undefined;
 
-export type Validate = (data: BaseFieldValue) => ValidateResult;
+export type Validate = (data: any) => ValidateResult | Promise<ValidateResult>;
 
 export type ValidationOptions = Partial<{
-  required: boolean | string;
+  required: string | ValidationOptionObject<boolean>;
   min: ValidationOptionObject<number | string>;
   max: ValidationOptionObject<number | string>;
   maxLength: ValidationOptionObject<number | string>;
   minLength: ValidationOptionObject<number | string>;
   pattern: ValidationOptionObject<RegExp>;
-  validate:
-    | Validate
-    | Record<string, Validate>
-    | { value: Validate | Record<string, Validate>; message: string };
+  validate: Validate | Record<string, Validate>;
 }>;
 
-export interface FieldError {
-  ref: Ref;
+export type MultipleFieldErrors = Record<string, ValidateResult>;
+
+export type FieldError = {
   type: string;
+  ref?: Ref;
+  types?: MultipleFieldErrors;
   message?: string;
   isManual?: boolean;
-}
+};
 
-export type ValidatePromiseResult = {} | void | FieldError;
+export type ManualFieldError<FormValues> = {
+  name: FieldName<FormValues>;
+  type: string;
+  types?: MultipleFieldErrors;
+  message?: string;
+};
 
-export interface Field extends ValidationOptions {
+export type Field = {
   ref: Ref;
   mutationWatcher?: MutationWatcher;
-  options?: {
-    ref: Ref;
-    mutationWatcher?: MutationWatcher;
-  }[];
-}
+  options?: RadioOrCheckboxOption[];
+} & ValidationOptions;
 
-export type FieldsRefs<FormValues extends FieldValues> = Partial<
+export type FieldRefs<FormValues extends FieldValues> = Partial<
   Record<FieldName<FormValues>, Field>
 >;
 
-export type FieldErrors<FormValues extends FieldValues> = Partial<
-  Record<FieldName<FormValues>, FieldError>
->;
+export type NestDataObject<FormValues> = {
+  [Key in keyof FormValues]?: FormValues[Key] extends any[]
+    ? FormValues[Key][number] extends object
+      ? FieldErrors<FormValues[Key][number]>[]
+      : FormValues[Key][number] extends string | number
+      ? FieldError[]
+      : FieldError
+    : FormValues[Key] extends Date
+    ? FieldError
+    : FormValues[Key] extends object
+    ? FieldErrors<FormValues[Key]>
+    : FieldError;
+};
 
-export interface SubmitPromiseResult<FormValues extends FieldValues> {
+export type FieldErrors<FormValues> = NestDataObject<FormValues>;
+
+export type Touched<FormValues> = NestDataObject<FormValues>;
+
+export type SubmitPromiseResult<FormValues extends FieldValues> = {
   errors: FieldErrors<FormValues>;
   values: FormValues;
-}
+};
 
-export interface SchemaValidationResult<FormValues> {
-  fieldErrors: FieldErrors<FormValues>;
-  result: FieldValues;
-}
-
-export interface ValidationPayload<Name, Value> {
-  name: Name;
-  value?: Value;
-}
-
-export interface FormState<FormValues extends FieldValues = FieldValues> {
+export type FormStateProxy<FormValues extends FieldValues = FieldValues> = {
   dirty: boolean;
+  dirtyFields: Set<FieldName<FormValues>>;
   isSubmitted: boolean;
   submitCount: number;
-  touched: FieldName<FormValues>[];
+  touched: Touched<FormValues>;
   isSubmitting: boolean;
   isValid: boolean;
-}
+};
 
-export interface NameProp {
+export type ReadFormState = { [P in keyof FormStateProxy]: boolean };
+
+export type RadioOrCheckboxOption = {
+  ref: HTMLInputElement;
+  mutationWatcher?: MutationWatcher;
+};
+
+export type FieldElement =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement
+  | CustomElement;
+
+export type CustomElement = {
   name: string;
-}
-
-export interface ElementLike extends NameProp {
   type?: string;
-  value?: string;
+  value?: any;
   checked?: boolean;
-  options?: any;
-}
+  options?: HTMLOptionsCollection;
+  files?: FileList | null;
+};
+
+export type HandleChange = (evt: Event) => Promise<void | boolean>;
+
+export type FormValuesFromErrors<Errors> = Errors extends FieldErrors<
+  infer FormValues
+>
+  ? FormValues
+  : never;
+
+export type EventFunction = (args: any) => any;
+
+export type Control<FormValues extends FieldValues = FieldValues> = {
+  register<Element extends FieldElement = FieldElement>(): (
+    ref: Element | null,
+  ) => void;
+  register<Element extends FieldElement = FieldElement>(
+    validationOptions: ValidationOptions,
+  ): (ref: Element | null) => void;
+  register<Element extends FieldElement = FieldElement>(
+    name: FieldName<FormValues>,
+    validationOptions?: ValidationOptions,
+  ): void;
+  register<Element extends FieldElement = FieldElement>(
+    namesWithValidationOptions: Record<
+      FieldName<FormValues>,
+      ValidationOptions
+    >,
+  ): void;
+  register<Element extends FieldElement = FieldElement>(
+    ref: Element,
+    validationOptions?: ValidationOptions,
+  ): void;
+  register<Element extends FieldElement = FieldElement>(
+    refOrValidationOptions: ValidationOptions | Element | null,
+    validationOptions?: ValidationOptions,
+  ): ((ref: Element | null) => void) | void;
+  triggerValidation: (
+    payload?: FieldName<FormValues> | FieldName<FormValues>[] | string,
+    shouldRender?: boolean,
+  ) => Promise<boolean>;
+  reRender: () => void;
+  removeFieldEventListener: (field: Field, forceDelete?: boolean) => void;
+  unregister(name: FieldName<FormValues>): void;
+  unregister(names: FieldName<FormValues>[]): void;
+  unregister(names: FieldName<FormValues> | FieldName<FormValues>[]): void;
+  getValues: (payload?: { nest: boolean }) => any;
+  setValue<Name extends FieldName<FormValues>>(
+    name: Name,
+    value?: FormValues[Name],
+    shouldValidate?: boolean,
+  ): void;
+  setValue<Name extends FieldName<FormValues>>(
+    namesWithValue: Record<Name, any>[],
+    shouldValidate?: boolean,
+  ): void;
+  setValue<Name extends FieldName<FormValues>>(
+    names: Name | Record<Name, any>[],
+    valueOrShouldValidate?: FormValues[Name] | boolean,
+    shouldValidate?: boolean,
+  ): void;
+  formState: FormStateProxy<FormValues>;
+  mode: {
+    isOnBlur: boolean;
+    isOnSubmit: boolean;
+  };
+  reValidateMode: {
+    isReValidateOnBlur: boolean;
+    isReValidateOnSubmit: boolean;
+  };
+  validateSchemaIsValid?: (fieldsValues: any) => void;
+  touchedFieldsRef: React.MutableRefObject<Touched<FormValues>>;
+  watchFieldArrayRef: React.MutableRefObject<any>;
+  validFieldsRef: React.MutableRefObject<Set<FieldName<FormValues>>>;
+  fieldsWithValidationRef: React.MutableRefObject<Set<FieldName<FormValues>>>;
+  errorsRef: React.MutableRefObject<FieldErrors<FormValues>>;
+  fieldsRef: React.MutableRefObject<FieldRefs<FormValues>>;
+  resetFieldArrayFunctionRef: React.MutableRefObject<
+    Record<string, (values: any) => void>
+  >;
+  fieldArrayNamesRef: React.MutableRefObject<Set<string>>;
+  isDirtyRef: React.MutableRefObject<boolean>;
+  readFormStateRef: React.MutableRefObject<{
+    dirty: boolean;
+    isSubmitted: boolean;
+    submitCount: boolean;
+    touched: boolean;
+    isSubmitting: boolean;
+    isValid: boolean;
+    dirtyFields: boolean;
+  }>;
+  defaultValuesRef: React.MutableRefObject<
+    DeepPartial<FormValues> | FormValues[FieldName<FormValues>]
+  >;
+};
+
+export type Assign<T extends object, U extends object> = T & Omit<U, keyof T>;
+
+export type AsProps<As> = As extends undefined
+  ? {}
+  : As extends React.ReactElement
+  ? { [key: string]: any }
+  : As extends React.ComponentType<infer P>
+  ? P
+  : As extends keyof JSX.IntrinsicElements
+  ? JSX.IntrinsicElements[As]
+  : never;
+
+export type ControllerProps<
+  As extends
+    | React.ReactElement
+    | React.ComponentType<any>
+    | keyof JSX.IntrinsicElements,
+  ControlProp extends Control = Control
+> = Assign<
+  {
+    name: string;
+    as: As;
+    rules?: ValidationOptions;
+    onChange?: EventFunction;
+    onBlur?: EventFunction;
+    mode?: Mode;
+    onChangeName?: string;
+    onBlurName?: string;
+    valueName?: string;
+    defaultValue?: any;
+    control?: ControlProp;
+  },
+  AsProps<As>
+>;
+
+export type ErrorMessageProps<
+  Errors extends FieldErrors<any>,
+  Name extends FieldName<FormValuesFromErrors<Errors>>,
+  As extends
+    | undefined
+    | React.ReactElement
+    | React.ComponentType<any>
+    | keyof JSX.IntrinsicElements = undefined
+> = Assign<
+  {
+    as?: As;
+    errors?: Errors;
+    name: Name;
+    message?: string;
+    children?: (data: {
+      message: string;
+      messages?: MultipleFieldErrors;
+    }) => React.ReactNode;
+  },
+  AsProps<As>
+>;
+
+export type UseFieldArrayProps<
+  KeyName extends string = 'id',
+  ControlProp extends Control = Control
+> = {
+  name: string;
+  keyName?: KeyName;
+  control?: ControlProp;
+};
+
+export type ArrayField<
+  FormArrayValues extends FieldValues = FieldValues,
+  KeyName extends string = 'id'
+> = FormArrayValues & Record<KeyName, string>;

@@ -1,9 +1,11 @@
 import React from 'react';
-import useForm from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { withRouter } from 'react-router';
 
+let renderCounter = 0;
+
 const FormState: React.FC = (props: any) => {
-  const { register, handleSubmit, formState } = useForm<{
+  const { register, handleSubmit, formState, reset } = useForm<{
     firstName: string;
     lastName: string;
     select: string;
@@ -12,6 +14,8 @@ const FormState: React.FC = (props: any) => {
   }>({
     mode: props.match.params.mode,
   });
+
+  renderCounter++;
 
   return (
     <form onSubmit={handleSubmit(() => {})}>
@@ -25,8 +29,13 @@ const FormState: React.FC = (props: any) => {
         ref={register({ required: true })}
         placeholder="lastName"
       />
-      <div id="state">{JSON.stringify(formState)}</div>
-
+      <div id="state">
+        {JSON.stringify({
+          ...formState,
+          touched: Object.keys(formState.touched),
+          dirtyFields: [...formState.dirtyFields],
+        })}
+      </div>
       <select name="select" ref={register} defaultValue="test">
         <option value="test">test</option>
         <option value="test1">test1</option>
@@ -42,7 +51,11 @@ const FormState: React.FC = (props: any) => {
         defaultChecked
         ref={register}
       />
-      <button>Submit</button>
+      <button id="submit">Submit</button>
+      <button type="button" onClick={() => reset()} id="resetForm">
+        Reset
+      </button>
+      <div id="renderCount">{renderCounter}</div>
     </form>
   );
 };

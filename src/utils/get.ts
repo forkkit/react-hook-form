@@ -1,10 +1,15 @@
-export default (obj: any, path: string[] | string, defaultValue?: any) => {
-  const result = String.prototype.split
-    .call(path, /[,[\].]+?/)
+import isUndefined from './isUndefined';
+import isNullOrUndefined from './isNullOrUndefined';
+
+export default (obj: any, path: string, defaultValue?: any) => {
+  const result = path
+    .split(/[,[\].]+?/)
     .filter(Boolean)
     .reduce(
-      (res, key) => (res !== null && res !== undefined ? res[key] : res),
+      (result, key) => (isNullOrUndefined(result) ? result : result[key]),
       obj,
     );
-  return result === undefined || result === obj ? defaultValue : result;
+  return isUndefined(result) || result === obj
+    ? obj[path] || defaultValue
+    : result;
 };

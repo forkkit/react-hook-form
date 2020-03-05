@@ -1,5 +1,5 @@
 import React from 'react';
-import useForm from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 let renderCounter = 0;
 
@@ -17,8 +17,13 @@ const Basic: React.FC = (props: any) => {
     pattern: string;
     radio: string;
     checkbox: string;
+    checkboxArray: string[];
     multiple: string;
     validate: string;
+    nestItem: {
+      nest1: string;
+    };
+    arrayItem: { test1: string; test2: string }[];
   }>({
     mode: props.match.params.mode,
   });
@@ -28,6 +33,18 @@ const Basic: React.FC = (props: any) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      <input
+        name="nestItem.nest1"
+        placeholder="nest.nest1"
+        ref={register({ required: true })}
+      />
+      {errors.nestItem?.nest1 && <p>nest 1 error</p>}
+      <input
+        name="arrayItem[0].test1"
+        placeholder="arrayItem[0].test1"
+        ref={register({ required: true })}
+      />
+      {errors.arrayItem?.[0].test1 && <p>array item 1 error</p>}
       <input
         name="firstName"
         ref={register({ required: true })}
@@ -110,6 +127,25 @@ const Basic: React.FC = (props: any) => {
         ref={register({ required: true })}
       />
       {errors.checkbox && <p>checkbox error</p>}
+      <input
+        type="checkbox"
+        name="checkboxArray"
+        value="1"
+        ref={register({ required: true })}
+      />
+      <input
+        type="checkbox"
+        name="checkboxArray"
+        value="2"
+        ref={register({ required: true })}
+      />
+      <input
+        type="checkbox"
+        name="checkboxArray"
+        value="3"
+        ref={register({ required: true })}
+      />
+      {errors.checkboxArray && <p>checkboxArray error</p>}
       <select name="multiple" multiple ref={register({ required: true })}>
         <option value="optionA">optionA</option>
         <option value="optionB">optionB</option>

@@ -15,7 +15,6 @@ context('basicSchemaValidation form validation', () => {
 
     cy.get('input[name="firstName"]').type('bill');
     cy.get('input[name="lastName"]').type('luo123456');
-    cy.get('input[name="lastName"] + p').contains('lastName error');
     cy.get('select[name="selectNumber"]').select('1');
     cy.get('input[name="pattern"]').type('luo');
     cy.get('input[name="min"]').type('1');
@@ -45,10 +44,11 @@ context('basicSchemaValidation form validation', () => {
       .type('19');
     cy.get('input[name="minDate"]').type('2019-08-01');
     cy.get('input[name="maxDate"]').type('2019-08-01');
+    cy.get('input[name="maxDate"]').blur();
     cy.get('input[name="checkbox"]').check();
 
     cy.get('p').should('have.length', 0);
-    cy.get('#renderCount').contains('31');
+    cy.get('#renderCount').contains('24');
   });
 
   it('should validate the form with onBlur mode', () => {
@@ -108,7 +108,7 @@ context('basicSchemaValidation form validation', () => {
     cy.get('input[name="checkbox"]').check();
 
     cy.get('p').should('have.length', 0);
-    cy.get('#renderCount').contains('38');
+    cy.get('#renderCount').contains('28');
   });
 
   it('should validate the form with onChange mode', () => {
@@ -159,6 +159,6 @@ context('basicSchemaValidation form validation', () => {
     cy.get('input[name="checkbox"]').check();
 
     cy.get('p').should('have.length', 0);
-    cy.get('#renderCount').contains('33');
+    cy.get('#renderCount').contains('31');
   });
 });

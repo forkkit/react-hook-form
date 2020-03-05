@@ -1,5 +1,7 @@
 import React from 'react';
-import useForm from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+
+let renderCounter = 0;
 
 function TriggerValidation() {
   const { register, triggerValidation, errors } = useForm<{
@@ -7,6 +9,9 @@ function TriggerValidation() {
     test1: string;
     test2: string;
   }>();
+
+  renderCounter++;
+
   return (
     <>
       <input name="test" ref={register({ required: true })} />
@@ -21,7 +26,7 @@ function TriggerValidation() {
       <button
         id="single"
         type="button"
-        onClick={() => triggerValidation({ name: 'test' })}
+        onClick={() => triggerValidation('test')}
       >
         trigger single
       </button>
@@ -29,12 +34,12 @@ function TriggerValidation() {
       <button
         id="multiple"
         type="button"
-        onClick={() =>
-          triggerValidation([{ name: 'test1' }, { name: 'test2' }])
-        }
+        onClick={() => triggerValidation(['test1', 'test2'])}
       >
         trigger multiple
       </button>
+
+      <div id="renderCount">{renderCounter}</div>
     </>
   );
 }

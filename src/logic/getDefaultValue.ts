@@ -1,12 +1,12 @@
 import get from '../utils/get';
 import isUndefined from '../utils/isUndefined';
-import { FieldValues, BaseFieldValue, FieldValue, FieldName } from '../types';
+import { DeepPartial, FieldValues, FieldValue, FieldName } from '../types';
 
 export default <FormValues extends FieldValues>(
-  defaultValues: Partial<FormValues>,
+  defaultValues: DeepPartial<FormValues>,
   name: FieldName<FormValues>,
-  defaultValue?: BaseFieldValue,
-): FieldValue<FormValues> | Partial<FormValues> | undefined =>
+  defaultValue?: Record<string, any>,
+): FieldValue<FormValues> | DeepPartial<FormValues> | undefined =>
   isUndefined(defaultValues[name])
-    ? get(defaultValues, name as string, defaultValue)
+    ? get(defaultValues, name, defaultValue)
     : defaultValues[name];

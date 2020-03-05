@@ -1,8 +1,8 @@
 import isEmptyObject from '../utils/isEmptyObject';
 import isSameError from '../utils/isSameError';
-import { FieldValues, FieldName } from '../types';
+import get from '../utils/get';
+import { FieldValues, FieldName, FieldErrors } from '../types';
 
-// TODO: improve the types in this file
 export default function shouldUpdateWithError<FormValues extends FieldValues>({
   errors,
   name,
@@ -10,33 +10,31 @@ export default function shouldUpdateWithError<FormValues extends FieldValues>({
   validFields,
   fieldsWithValidation,
 }: {
-  errors: any;
-  error: any;
+  errors: FieldErrors<FormValues>;
+  error: FieldErrors<FormValues>;
   name: FieldName<FormValues>;
   validFields: Set<FieldName<FormValues>>;
   fieldsWithValidation: Set<FieldName<FormValues>>;
 }): boolean {
+  const isFieldValid = isEmptyObject(error);
+  const isFormValid = isEmptyObject(errors);
+  const currentFieldError = get(error, name);
+  const existFieldError = get(errors, name);
+
   if (
-    (validFields.has(name) && isEmptyObject(error)) ||
-    (errors[name] && errors[name].isManual)
+    (isFieldValid && validFields.has(name)) ||
+    (existFieldError && existFieldError.isManual)
   ) {
     return false;
   }
 
   if (
-    (fieldsWithValidation.has(name) &&
-      !validFields.has(name) &&
-      isEmptyObject(error)) ||
-    (isEmptyObject(errors) && !isEmptyObject(error)) ||
-    (isEmptyObject(error) && errors[name]) ||
-    !errors[name]
+    isFormValid !== isFieldValid ||
+    (!isFormValid && !existFieldError) ||
+    (isFieldValid && fieldsWithValidation.has(name) && !validFields.has(name))
   ) {
     return true;
   }
 
-  return (
-    errors[name] &&
-    error[name] &&
-    !isSameError(errors[name], error[name].type, error[name].message)
-  );
+  return currentFieldError && !isSameError(existFieldError, currentFieldError);
 }
